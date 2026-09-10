@@ -28,6 +28,10 @@ _Avoid_: step goal, 10k steps
 A body weight in pounds on a date, intended for Fridays. One Weigh-in per date; a later post replaces it.
 _Avoid_: weigh in, weight log, check-in
 
+**Weight goal**:
+Two hundred five pounds. The line graph plots Weigh-ins toward this number.
+_Avoid_: target weight, ideal weight
+
 **Day**:
 A calendar date in America/Chicago. Status is computed from that date's Food logs and Walks, not stored.
 _Avoid_: session, streak day
