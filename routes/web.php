@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DayNoteWebController;
 use App\Http\Controllers\FoodLogWebController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WalkWebController;
@@ -14,3 +15,4 @@ Route::post('/walks', [WalkWebController::class, 'store'])->name('walks.store');
 Route::patch('/walks/{walk}', [WalkWebController::class, 'update'])->name('walks.update');
 Route::delete('/walks/{walk}', [WalkWebController::class, 'destroy'])->name('walks.destroy');
 Route::post('/weigh-ins', [WeighInWebController::class, 'store'])->name('weigh-ins.store');
+Route::post('/day-notes', [DayNoteWebController::class, 'store'])->name('day-notes.store');

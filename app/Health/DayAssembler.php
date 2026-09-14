@@ -2,6 +2,7 @@
 
 namespace App\Health;
 
+use App\Models\DayNote;
 use App\Models\FoodLog;
 use App\Models\Walk;
 use App\Support\HealthClock;
@@ -29,6 +30,7 @@ class DayAssembler
         $milesGoal = (float) config('health.miles_goal');
         $eaten = (int) $logs->sum('calories');
         $miles = round((float) $walks->sum('miles'), 2);
+        $note = DayNote::query()->whereDate('date', $date)->value('body');
 
         return [
             'date' => $date,
@@ -38,7 +40,8 @@ class DayAssembler
             'eating' => $logs->isNotEmpty() && $eaten <= $caloriesGoal ? 'pass' : 'fail',
             'miles_walked' => $miles,
             'miles_goal' => $milesGoal,
-            'walking' => $miles >= $milesGoal ? 'pass' : 'fail',
+            'walking' => Walking::status($date, $miles),
+            'note' => is_string($note) && $note !== '' ? $note : null,
             'food_logs' => $this->foodLogs($logs),
             'walks' => $this->walks($walks),
         ];

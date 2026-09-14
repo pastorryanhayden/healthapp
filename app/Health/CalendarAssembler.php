@@ -2,6 +2,7 @@
 
 namespace App\Health;
 
+use App\Models\DayNote;
 use App\Models\FoodLog;
 use App\Models\Walk;
 use App\Models\WeighIn;
@@ -29,7 +30,6 @@ class CalendarAssembler
         $start = $start->startOfMonth();
         $end = $start->endOfMonth();
         $caloriesGoal = (int) config('health.calories_goal');
-        $milesGoal = (float) config('health.miles_goal');
 
         $eatenByDate = FoodLog::query()
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
@@ -51,6 +51,12 @@ class CalendarAssembler
             ->map(fn ($date) => CarbonImmutable::parse($date)->toDateString())
             ->all();
 
+        $noteDates = DayNote::query()
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn ($date) => CarbonImmutable::parse($date)->toDateString())
+            ->all();
+
         $days = [];
 
         for ($day = $start; $day->lte($end); $day = $day->addDay()) {
@@ -63,8 +69,9 @@ class CalendarAssembler
             $days[] = [
                 'date' => $key,
                 'eating' => $logCount > 0 && $calories <= $caloriesGoal ? 'pass' : 'fail',
-                'walking' => $miles >= $milesGoal ? 'pass' : 'fail',
+                'walking' => Walking::status($key, $miles),
                 'weigh_in' => in_array($key, $weighInDates, true),
+                'note' => in_array($key, $noteDates, true),
             ];
         }
 

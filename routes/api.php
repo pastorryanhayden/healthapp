@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\DayController;
+use App\Http\Controllers\Api\DayNoteController;
 use App\Http\Controllers\Api\FoodController;
 use App\Http\Controllers\Api\FoodLogController;
 use App\Http\Controllers\Api\TodayController;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/today', TodayController::class);
 Route::get('/days/{date}', DayController::class)->where('date', '[0-9]{4}-[0-9]{2}-[0-9]{2}');
+Route::put('/days/{date}/note', [DayNoteController::class, 'upsert'])->where('date', '[0-9]{4}-[0-9]{2}-[0-9]{2}');
 Route::get('/calendar', CalendarController::class);
 
 Route::get('/foods', [FoodController::class, 'index']);

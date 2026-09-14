@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Ai\Agents\CalorieEstimator;
+use App\Models\DayNote;
 use App\Models\Food;
 use App\Models\FoodLog;
 use App\Models\Walk;
@@ -42,7 +43,8 @@ class TrackerApiTest extends TestCase
             ->assertJsonPath('miles_goal', 4)
             ->assertJsonPath('walking', 'fail')
             ->assertJsonPath('food_logs', [])
-            ->assertJsonPath('walks', []);
+            ->assertJsonPath('walks', [])
+            ->assertJsonPath('note', null);
     }
 
     public function test_catalog_hit_skips_ai_and_logs_food(): void
@@ -178,6 +180,50 @@ class TrackerApiTest extends TestCase
         $this->assertSame('pass', $day['eating']);
         $this->assertSame('pass', $day['walking']);
         $this->assertTrue($day['weigh_in']);
+
+        $sunday = collect($response->json('days'))->firstWhere('date', '2026-09-13');
+        $this->assertSame('rest', $sunday['walking']);
+        $this->assertSame('fail', $sunday['eating']);
+        $this->assertFalse($day['note']);
+        $this->assertFalse($sunday['note']);
+    }
+
+    public function test_can_save_and_clear_a_day_note(): void
+    {
+        $this->putJson('/api/days/2026-09-11/note', ['note' => '  Birthday dinner  '])
+            ->assertOk()
+            ->assertJsonPath('day.date', '2026-09-11')
+            ->assertJsonPath('day.note', 'Birthday dinner');
+
+        $this->putJson('/api/days/2026-09-11/note', ['note' => 'Cake at the office'])
+            ->assertOk()
+            ->assertJsonPath('day.note', 'Cake at the office');
+
+        $this->getJson('/api/today')
+            ->assertOk()
+            ->assertJsonPath('note', 'Cake at the office');
+
+        $this->getJson('/api/calendar?month=2026-09')
+            ->assertOk();
+        $marked = collect($this->getJson('/api/calendar?month=2026-09')->json('days'))
+            ->firstWhere('date', '2026-09-11');
+        $this->assertTrue($marked['note']);
+
+        $this->putJson('/api/days/2026-09-11/note', ['note' => '   '])
+            ->assertOk()
+            ->assertJsonPath('day.note', null);
+
+        $this->assertDatabaseCount('day_notes', 0);
+    }
+
+    public function test_sunday_has_no_walking_check(): void
+    {
+        $this->getJson('/api/days/2026-09-13')
+            ->assertOk()
+            ->assertJsonPath('date', '2026-09-13')
+            ->assertJsonPath('walking', 'rest')
+            ->assertJsonPath('miles_walked', 0)
+            ->assertJsonPath('eating', 'fail');
     }
 
     public function test_empty_food_input_is_a_validation_error(): void
@@ -211,6 +257,35 @@ class TrackerApiTest extends TestCase
         $this->getJson('/api/days/2026-09-10')
             ->assertOk()
             ->assertJsonPath('date', '2026-09-10')
+            ->assertJsonPath('eating', 'fail');
+    }
+
+    public function test_can_log_food_and_walk_on_a_past_date(): void
+    {
+        CalorieEstimator::fake();
+
+        Food::factory()->create([
+            'name' => 'Oatmeal',
+            'normalized_name' => 'oatmeal',
+            'calories' => 300,
+        ]);
+
+        $this->postJson('/api/food-logs', ['input' => 'Oatmeal', 'date' => '2026-09-10'])
+            ->assertCreated()
+            ->assertJsonPath('day.date', '2026-09-10')
+            ->assertJsonPath('day.calories_eaten', 300)
+            ->assertJsonPath('day.eating', 'pass');
+
+        $this->postJson('/api/walks', ['miles' => 4, 'date' => '2026-09-10'])
+            ->assertCreated()
+            ->assertJsonPath('day.date', '2026-09-10')
+            ->assertJsonPath('day.miles_walked', 4)
+            ->assertJsonPath('day.walking', 'pass');
+
+        $this->getJson('/api/today')
+            ->assertOk()
+            ->assertJsonPath('date', '2026-09-11')
+            ->assertJsonPath('calories_eaten', 0)
             ->assertJsonPath('eating', 'fail');
     }
 
@@ -306,7 +381,17 @@ class TrackerApiTest extends TestCase
 
         $this->assertDatabaseMissing('food_logs', ['id' => $log->id]);
         $this->assertDatabaseMissing('walks', ['id' => $walk->id]);
-        $this->get('/')->assertSee('Save');
+
+        $this->from('/')
+            ->post(route('day-notes.store'), ['note' => 'Birthday party'])
+            ->assertRedirect(route('home'));
+        $this->assertTrue(
+            DayNote::query()
+                ->whereDate('date', '2026-09-11')
+                ->where('body', 'Birthday party')
+                ->exists()
+        );
+        $this->get('/')->assertSee('Save')->assertSee('Birthday party');
     }
 
     public function test_home_page_renders_today(): void

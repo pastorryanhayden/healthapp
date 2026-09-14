@@ -23,9 +23,13 @@
                         <span class="badge {{ $eatingPass ? 'badge-success' : 'badge-error' }}">
                             Eating {{ $eatingPass ? 'pass' : 'fail' }}
                         </span>
-                        <span class="badge {{ $walkingPass ? 'badge-success' : 'badge-error' }}">
-                            Walking {{ $walkingPass ? 'pass' : 'fail' }}
-                        </span>
+                        @if ($day['walking'] === 'rest')
+                            <span class="badge badge-ghost">Walking rest</span>
+                        @else
+                            <span class="badge {{ $walkingPass ? 'badge-success' : 'badge-error' }}">
+                                Walking {{ $walkingPass ? 'pass' : 'fail' }}
+                            </span>
+                        @endif
                     </div>
                 </div>
 
@@ -87,7 +91,11 @@
             <div class="card-body">
                 <h2 class="card-title">Walks</h2>
                 <p class="text-base-content/70">
-                    {{ $day['miles_walked'] }} / {{ $day['miles_goal'] }} miles
+                    @if ($day['walking'] === 'rest')
+                        Sunday rest — no walk required.
+                    @else
+                        {{ $day['miles_walked'] }} / {{ $day['miles_goal'] }} miles
+                    @endif
                 </p>
                 <form method="POST" action="{{ route('walks.store') }}" class="join w-full">
                     @csrf
@@ -137,6 +145,23 @@
             </div>
         </section>
     </div>
+
+    <section class="card bg-base-100 border border-base-300 shadow-sm mt-6">
+        <div class="card-body">
+            <form method="POST" action="{{ route('day-notes.store') }}">
+                @csrf
+                <label class="text-sm text-base-content/60" for="note">Note</label>
+                <textarea
+                    id="note"
+                    name="note"
+                    rows="2"
+                    class="textarea textarea-bordered w-full mt-1"
+                    placeholder="{{ ($day['calories_remaining'] ?? 0) < 0 ? 'What happened? Birthday, dinner out…' : 'Birthday, travel, sick…' }}"
+                >{{ $day['note'] }}</textarea>
+                <button type="submit" class="btn btn-sm mt-2">Save note</button>
+            </form>
+        </div>
+    </section>
 
     <div class="grid gap-6 lg:grid-cols-3 mt-6">
         <section class="card bg-base-100 border border-base-300 shadow-sm lg:col-span-3">
@@ -222,11 +247,16 @@
                                 <span class="{{ $calDay['eating'] === 'pass' ? 'text-success' : 'text-error' }}" title="Eating {{ $calDay['eating'] }}">
                                     {{ $calDay['eating'] === 'pass' ? '✓' : '✕' }}
                                 </span>
-                                <span class="{{ $calDay['walking'] === 'pass' ? 'text-success' : 'text-error' }}" title="Walking {{ $calDay['walking'] }}">
-                                    {{ $calDay['walking'] === 'pass' ? '✓' : '✕' }}
-                                </span>
+                                @if ($calDay['walking'] !== 'rest')
+                                    <span class="{{ $calDay['walking'] === 'pass' ? 'text-success' : 'text-error' }}" title="Walking {{ $calDay['walking'] }}">
+                                        {{ $calDay['walking'] === 'pass' ? '✓' : '✕' }}
+                                    </span>
+                                @endif
                                 @if ($calDay['weigh_in'])
                                     <span title="Weigh-in">⚖</span>
+                                @endif
+                                @if ($calDay['note'])
+                                    <span title="Note">·</span>
                                 @endif
                             </div>
                         </div>
