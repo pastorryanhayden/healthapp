@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Health\DayAssembler;
+use App\Health\DuplicateFoodLog;
 use App\Health\LogFood;
 use App\Health\UpdateFoodLog;
 use App\Http\Controllers\Controller;
@@ -42,5 +43,10 @@ class FoodLogController extends Controller
         return response()->json([
             'day' => $days->forDate($date),
         ]);
+    }
+
+    public function duplicate(FoodLog $foodLog, DuplicateFoodLog $duplicate): JsonResponse
+    {
+        return response()->json($duplicate->handle($foodLog), 201);
     }
 }

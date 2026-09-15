@@ -73,6 +73,10 @@
                                     >
                                     <button type="submit" class="btn btn-sm">Save</button>
                                 </form>
+                                <form method="POST" action="{{ route('food-logs.duplicate', $log['id']) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm">Again</button>
+                                </form>
                                 <form method="POST" action="{{ route('food-logs.destroy', $log['id']) }}">
                                     @csrf
                                     @method('DELETE')

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Health\DuplicateFoodLog;
 use App\Health\LogFood;
 use App\Health\UpdateFoodLog;
 use App\Http\Requests\StoreFoodLogRequest;
@@ -46,6 +47,13 @@ class FoodLogWebController extends Controller
     public function destroy(FoodLog $foodLog): RedirectResponse
     {
         $foodLog->delete();
+
+        return redirect()->route('home');
+    }
+
+    public function duplicate(FoodLog $foodLog, DuplicateFoodLog $duplicate): RedirectResponse
+    {
+        $duplicate->handle($foodLog);
 
         return redirect()->route('home');
     }

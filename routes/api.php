@@ -18,6 +18,7 @@ Route::get('/calendar', CalendarController::class);
 Route::get('/foods', [FoodController::class, 'index']);
 Route::post('/food-logs', [FoodLogController::class, 'store']);
 Route::patch('/food-logs/{foodLog}', [FoodLogController::class, 'update']);
+Route::post('/food-logs/{foodLog}/duplicate', [FoodLogController::class, 'duplicate']);
 Route::delete('/food-logs/{foodLog}', [FoodLogController::class, 'destroy']);
 
 Route::post('/walks', [WalkController::class, 'store']);

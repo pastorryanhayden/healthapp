@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::post('/food-logs', [FoodLogWebController::class, 'store'])->name('food-logs.store');
 Route::patch('/food-logs/{foodLog}', [FoodLogWebController::class, 'update'])->name('food-logs.update');
+Route::post('/food-logs/{foodLog}/duplicate', [FoodLogWebController::class, 'duplicate'])->name('food-logs.duplicate');
 Route::delete('/food-logs/{foodLog}', [FoodLogWebController::class, 'destroy'])->name('food-logs.destroy');
 Route::post('/walks', [WalkWebController::class, 'store'])->name('walks.store');
 Route::patch('/walks/{walk}', [WalkWebController::class, 'update'])->name('walks.update');

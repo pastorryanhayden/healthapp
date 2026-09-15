@@ -70,6 +70,34 @@ class TrackerApiTest extends TestCase
         $this->assertDatabaseCount('foods', 1);
     }
 
+    public function test_can_duplicate_a_food_log_without_calling_ai(): void
+    {
+        CalorieEstimator::fake();
+
+        $food = Food::factory()->create([
+            'name' => 'Greek yogurt',
+            'normalized_name' => 'greek yogurt',
+            'calories' => 110,
+        ]);
+        $log = FoodLog::factory()->create([
+            'food_id' => $food->id,
+            'date' => '2026-09-11',
+            'calories' => 130,
+            'input' => 'Friendly farms yogurt',
+        ]);
+
+        $this->postJson("/api/food-logs/{$log->id}/duplicate")
+            ->assertCreated()
+            ->assertJsonPath('food_log.name', 'Greek yogurt')
+            ->assertJsonPath('food_log.calories', 130)
+            ->assertJsonPath('day.calories_eaten', 260)
+            ->assertJsonPath('day.eating', 'pass');
+
+        CalorieEstimator::assertNeverPrompted();
+        $this->assertDatabaseCount('food_logs', 2);
+        $this->assertDatabaseCount('foods', 1);
+    }
+
     public function test_catalog_miss_calls_agent_and_stores_food(): void
     {
         CalorieEstimator::fake([
@@ -366,6 +394,11 @@ class TrackerApiTest extends TestCase
         $this->from('/')
             ->patch(route('food-logs.update', $log), ['name' => 'Oatmeal', 'calories' => 280])
             ->assertRedirect(route('home'));
+
+        $this->from('/')
+            ->post(route('food-logs.duplicate', $log))
+            ->assertRedirect(route('home'));
+        $this->assertDatabaseCount('food_logs', 2);
 
         $this->from('/')
             ->patch(route('walks.update', $walk), ['miles' => 4])
